@@ -25,7 +25,7 @@ export const Analytics = () => {
           <h2 className="card-title">User Growth</h2>
           <div className="chart-container">
             <div className="chart">
-              {chartData.map((item, index) => (
+              {chartData.map((item) => (
                 <div key={item.month} className="chart-bar-container">
                   <div
                     className="chart-bar"

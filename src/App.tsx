@@ -6,9 +6,10 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { Overview } from './pages/Overview';
-import { Users } from './pages/Users';
+import { Appointments } from './pages/Appointments';
+import { Slots } from './pages/Slots';
+import { Schedule } from './pages/Schedule';
 import { Settings } from './pages/Settings';
-import { Analytics } from './pages/Analytics';
 import './App.css';
 
 function App() {
@@ -39,11 +40,31 @@ function App() {
             }
           />
           <Route
-            path="/dashboard/users"
+            path="/dashboard/appointments"
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <Users />
+                  <Appointments />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/slots"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Slots />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/schedule"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Schedule />
                 </DashboardLayout>
               </ProtectedRoute>
             }
@@ -54,16 +75,6 @@ function App() {
               <ProtectedRoute>
                 <DashboardLayout>
                   <Settings />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/analytics"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Analytics />
                 </DashboardLayout>
               </ProtectedRoute>
             }

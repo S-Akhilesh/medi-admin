@@ -182,6 +182,13 @@
   color: var(--color-warning);
 }
 
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-12);
+  color: var(--color-neutral-600);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .overview-page {

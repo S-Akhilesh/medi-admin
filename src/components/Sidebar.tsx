@@ -10,10 +10,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: '/dashboard', label: 'Overview', icon: '📊' },
-  { path: '/dashboard/users', label: 'Users', icon: '👥' },
+  { path: '/dashboard/overview', label: 'Overview', icon: '📊' },
+  { path: '/dashboard/appointments', label: 'Appointments', icon: '📅' },
+  { path: '/dashboard/slots', label: 'Time Slots', icon: '⏰' },
+  { path: '/dashboard/schedule', label: 'Schedule', icon: '📋' },
   { path: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
-  { path: '/dashboard/analytics', label: 'Analytics', icon: '📈' },
 ];
 
 export const Sidebar = () => {
