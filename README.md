@@ -1,4 +1,94 @@
-# React + TypeScript + Vite
+# Admin Panel - Firebase Authentication
+
+A modern admin panel built with React, TypeScript, and Vite, featuring Firebase authentication with multiple sign-in methods: Email/Password, Google OAuth, and Phone Number.
+
+## Features
+
+- 🔐 **Email Authentication** - Sign up and sign in with email and password
+- 🌐 **Google Authentication** - One-click sign in with Google account
+- 📱 **Phone Authentication** - Sign in using phone number with SMS verification
+- 🛡️ **Protected Routes** - Secure dashboard accessible only to authenticated users
+- 🎨 **Modern UI** - Beautiful, responsive design with gradient backgrounds
+
+## Setup Instructions
+
+### 1. Install Dependencies
+
+```bash
+yarn install
+```
+
+### 2. Firebase Configuration
+
+1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+2. Enable Authentication methods:
+   - Go to **Authentication** > **Sign-in method**
+   - Enable **Email/Password**
+   - Enable **Google** (configure OAuth consent screen)
+   - Enable **Phone** (requires Firebase Blaze plan for production)
+3. Get your Firebase configuration:
+   - Go to **Project Settings** > **General** > **Your apps**
+   - Copy the Firebase SDK configuration values
+
+### 3. Environment Variables
+
+Create a `.env` file in the root directory with your Firebase configuration:
+
+```env
+VITE_FIREBASE_API_KEY=your-api-key-here
+VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+```
+
+### 4. Run the Development Server
+
+```bash
+yarn dev
+```
+
+The app will be available at `http://localhost:5173`
+
+## Project Structure
+
+```
+src/
+├── components/          # Reusable components
+│   └── ProtectedRoute.tsx
+├── contexts/           # React contexts
+│   └── AuthContext.tsx # Firebase authentication context
+├── firebase/           # Firebase configuration
+│   └── config.ts
+├── pages/              # Page components
+│   ├── Login.tsx       # Main login page with auth options
+│   ├── EmailAuth.tsx   # Email/password authentication
+│   ├── GoogleAuth.tsx  # Google OAuth authentication
+│   ├── PhoneAuth.tsx   # Phone number authentication
+│   └── Dashboard.tsx   # Protected admin dashboard
+└── App.tsx             # Main app component with routing
+```
+
+## Usage
+
+1. Navigate to `/login` to see authentication options
+2. Choose your preferred authentication method:
+   - **Email**: Sign up or sign in with email and password
+   - **Google**: One-click Google sign-in
+   - **Phone**: Enter phone number and verify with SMS code
+3. After authentication, you'll be redirected to the protected dashboard
+
+## Technologies Used
+
+- React 19
+- TypeScript
+- Vite
+- Firebase Authentication
+- React Router DOM
+- CSS3 (Modern styling with gradients)
+
+---
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
