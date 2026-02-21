@@ -85,12 +85,14 @@ export const Settings = () => {
   const email = currentUser.email ?? '';
   const emailVerified = currentUser.emailVerified;
 
+  const isGoogleUser = currentUser.providerData?.some((p) => p.providerId === 'google.com');
+
   return (
     <div className="settings-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Settings</h1>
-          <p className="page-subtitle">View and update your profile</p>
+          <p className="page-subtitle">Manage your account and profile</p>
         </div>
       </div>
 
@@ -100,77 +102,99 @@ export const Settings = () => {
         </Alert>
       )}
 
-      <Card className="settings-card profile-card">
-        <h2 className="card-title">Profile</h2>
-        {loading ? (
-          <div className="settings-loading">Loading profile...</div>
-        ) : (
-          <form onSubmit={handleSubmit} className="settings-form">
-            <div className="profile-avatar-row">
-              <div className="profile-avatar">
-                {photoURL && !avatarError ? (
-                  <img
-                    src={photoURL}
-                    alt=""
-                    className="profile-avatar-img"
-                    referrerPolicy="no-referrer"
-                    onError={() => setAvatarError(true)}
-                  />
-                ) : (
-                  <span className="profile-avatar-placeholder">
-                    {(displayName || email).charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <div className="profile-avatar-hint">Photo updates when you save.</div>
+      <div className="settings-content">
+        <Card className="settings-card profile-card">
+          <div className="profile-card-header">
+            <span className="profile-card-icon" aria-hidden>👤</span>
+            <h2 className="card-title">Profile</h2>
+            <p className="profile-card-desc">Update how you appear in the app</p>
+          </div>
+          {loading ? (
+            <div className="settings-loading">
+              <div className="settings-loading-spinner" aria-hidden />
+              <p>Loading profile...</p>
             </div>
-            <Input
-              label="Display name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Your name"
-              disabled={saving}
-            />
-            <Input
-              label="Photo URL"
-              type="url"
-              value={photoURL}
-              onChange={(e) => setPhotoURL(e.target.value)}
-              placeholder="https://example.com/photo.jpg"
-              disabled={saving}
-              helperText="Optional. Link to a profile image."
-            />
-            <div className="input-wrapper">
-              <label className="input-label">Email</label>
-              <div className="profile-email-row">
-                <input
-                  type="email"
-                  value={email}
-                  readOnly
-                  className="input input--readonly"
-                  aria-label="Email (read-only)"
+          ) : (
+            <form onSubmit={handleSubmit} className="settings-form">
+              <div className="profile-avatar-section">
+                <div className="profile-avatar-wrap">
+                  <div className="profile-avatar">
+                    {photoURL && !avatarError ? (
+                      <img
+                        src={photoURL}
+                        alt=""
+                        className="profile-avatar-img"
+                        referrerPolicy="no-referrer"
+                        onError={() => setAvatarError(true)}
+                      />
+                    ) : (
+                      <span className="profile-avatar-placeholder">
+                        {(displayName || email).charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <p className="profile-avatar-hint">Add a photo URL below and save to update</p>
+                </div>
+              </div>
+              <div className="settings-form-row settings-form-row--two">
+                <Input
+                  label="Display name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Your name"
+                  disabled={saving}
                 />
-                {emailVerified && (
-                  <span className="profile-verified" title="Verified">✓ Verified</span>
-                )}
+                <Input
+                  label="Photo URL"
+                  type="url"
+                  value={photoURL}
+                  onChange={(e) => setPhotoURL(e.target.value)}
+                  placeholder="https://example.com/photo.jpg"
+                  disabled={saving}
+                  helperText="Optional"
+                />
               </div>
-              <span className="input-helper">Email cannot be changed here. Use your account provider to change it.</span>
-            </div>
-            <Input
-              label="Phone (optional)"
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+1 234 567 8900"
-              disabled={saving}
-              helperText="Stored in your profile only."
-            />
-            <Button type="submit" variant="primary" disabled={saving} fullWidth>
-              {saving ? 'Saving...' : 'Save changes'}
-            </Button>
-          </form>
-        )}
-      </Card>
+              <div className="settings-section">
+                <h3 className="settings-section-title">Account</h3>
+                <div className="input-wrapper">
+                  <label className="input-label">Email</label>
+                  <div className="profile-email-row">
+                    <input
+                      type="email"
+                      value={email}
+                      readOnly
+                      className="input input--readonly"
+                      aria-label="Email (read-only)"
+                    />
+                    {emailVerified && (
+                      <span className="profile-verified" title="Verified">✓ Verified</span>
+                    )}
+                  </div>
+                  <span className="input-helper">
+                    {isGoogleUser
+                      ? 'Linked to your Google account. Change it in Google settings.'
+                      : 'Email cannot be changed here.'}
+                  </span>
+                </div>
+                <Input
+                  label="Phone (optional)"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="+1 234 567 8900"
+                  disabled={saving}
+                  helperText="Stored in your profile only"
+                />
+              </div>
+              <div className="settings-form-actions">
+                <Button type="submit" variant="primary" disabled={saving} fullWidth>
+                  {saving ? 'Saving...' : 'Save changes'}
+                </Button>
+              </div>
+            </form>
+          )}
+        </Card>
+      </div>
     </div>
   );
 };
