@@ -7,13 +7,29 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { type TimeSlot } from '../types';
 
 const SLOTS_COLLECTION = 'slots';
+
+const sortSlots = (slots: TimeSlot[]) => {
+  // Sort by date then startTime (both lexicographically sortable formats)
+  return [...slots].sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    if (a.startTime !== b.startTime) return a.startTime.localeCompare(b.startTime);
+    return a.endTime.localeCompare(b.endTime);
+  });
+};
+
+const sanitizeSlotUpdates = (updates: Partial<TimeSlot>) => {
+  // Prevent accidental writes of derived/immutable fields.
+  // Also avoids writing undefined values for optional fields.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, createdAt, updatedAt, ...rest } = updates;
+  return Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined)) as Record<string, unknown>;
+};
 
 export const slotsService = {
   // Create a new time slot
@@ -28,35 +44,31 @@ export const slotsService = {
 
   // Get all slots for a specific doctor
   getSlotsByDoctor: async (doctorId: string): Promise<TimeSlot[]> => {
-    const q = query(
-      collection(db, SLOTS_COLLECTION),
-      where('doctorId', '==', doctorId),
-      orderBy('date', 'asc'),
-      orderBy('startTime', 'asc')
-    );
+    // NOTE: Avoid composite-index requirements by not using orderBy here.
+    // We sort client-side to keep CRUD working out-of-the-box.
+    const q = query(collection(db, SLOTS_COLLECTION), where('doctorId', '==', doctorId));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) => ({
+    const slots = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate(),
     })) as TimeSlot[];
+    return sortSlots(slots);
   },
 
   // Get slots for a specific date
   getSlotsByDate: async (date: string): Promise<TimeSlot[]> => {
-    const q = query(
-      collection(db, SLOTS_COLLECTION),
-      where('date', '==', date),
-      orderBy('startTime', 'asc')
-    );
+    // Avoid composite-index requirements; sort client-side.
+    const q = query(collection(db, SLOTS_COLLECTION), where('date', '==', date));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) => ({
+    const slots = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate(),
     })) as TimeSlot[];
+    return sortSlots(slots);
   },
 
   // Get all available slots
@@ -66,31 +78,29 @@ export const slotsService = {
       q = query(
         collection(db, SLOTS_COLLECTION),
         where('date', '==', date),
-        where('isAvailable', '==', true),
-        orderBy('startTime', 'asc')
+        where('isAvailable', '==', true)
       );
     } else {
       q = query(
         collection(db, SLOTS_COLLECTION),
         where('isAvailable', '==', true),
-        orderBy('date', 'asc'),
-        orderBy('startTime', 'asc')
       );
     }
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) => ({
+    const slots = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate(),
     })) as TimeSlot[];
+    return sortSlots(slots);
   },
 
   // Update a slot
   updateSlot: async (slotId: string, updates: Partial<TimeSlot>): Promise<void> => {
     const slotRef = doc(db, SLOTS_COLLECTION, slotId);
     await updateDoc(slotRef, {
-      ...updates,
+      ...sanitizeSlotUpdates(updates),
       updatedAt: Timestamp.now(),
     });
   },

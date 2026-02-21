@@ -23,15 +23,18 @@
   line-height: var(--line-height-normal);
 }
 
-.stats-grid {
+.charts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: var(--spacing-6);
   margin-bottom: var(--spacing-8);
 }
 
-.stat-card {
+.chart-card {
   padding: var(--spacing-6);
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
 }
 
 .stat-header {
@@ -199,8 +202,12 @@
     font-size: var(--font-size-2xl);
   }
 
-  .stats-grid {
+  .charts-grid {
     grid-template-columns: 1fr;
+  }
+
+  .chart-card {
+    min-height: 300px;
   }
 
   .overview-content {

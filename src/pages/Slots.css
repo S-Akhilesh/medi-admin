@@ -57,6 +57,9 @@
 
 .form-actions {
   margin-top: var(--spacing-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
 }
 
 .slots-card {
@@ -146,6 +149,7 @@
 .slot-actions {
   display: flex;
   gap: var(--spacing-2);
+  flex-wrap: wrap;
 }
 
 .loading-state,
