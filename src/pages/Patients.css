@@ -1,0 +1,202 @@
+.patients-page {
+  padding: var(--spacing-8) var(--spacing-6);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.patients-page .page-header {
+  margin-bottom: var(--spacing-8);
+}
+
+.patients-page .page-title {
+  margin: 0 0 var(--spacing-2) 0;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-neutral-900);
+  line-height: var(--line-height-tight);
+}
+
+.patients-page .page-subtitle {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--color-neutral-600);
+  line-height: var(--line-height-normal);
+}
+
+.patients-alert {
+  margin-bottom: var(--spacing-6);
+}
+
+.patients-card {
+  padding: var(--spacing-6);
+}
+
+.patients-card .card-title {
+  margin: 0 0 var(--spacing-6) 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-900);
+}
+
+.patients-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.patient-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--spacing-5);
+  background-color: var(--color-neutral-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-neutral-200);
+  transition: all var(--transition-base);
+}
+
+.patient-item:hover {
+  background-color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.patient-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.patient-name {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-900);
+}
+
+.patient-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-4);
+  font-size: var(--font-size-base);
+  color: var(--color-neutral-700);
+}
+
+.patient-phone,
+.patient-email {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.patient-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-600);
+}
+
+.patient-appointment-count {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary-600);
+}
+
+.patient-appointments-summary {
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-neutral-200);
+}
+
+.patient-summary-label {
+  display: block;
+  margin-bottom: var(--spacing-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.patient-appointment-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.patient-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+  font-size: var(--font-size-sm);
+}
+
+.patient-timeline-date {
+  color: var(--color-neutral-700);
+  min-width: 140px;
+}
+
+.patient-timeline-time {
+  color: var(--color-primary-600);
+  font-weight: var(--font-weight-medium);
+}
+
+.patient-timeline-status {
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+}
+
+.patient-timeline-status--scheduled {
+  background-color: #dbeafe;
+  color: var(--color-info);
+}
+
+.patient-timeline-status--confirmed {
+  background-color: #d1fae5;
+  color: var(--color-success);
+}
+
+.patient-timeline-status--completed {
+  background-color: var(--color-neutral-200);
+  color: var(--color-neutral-700);
+}
+
+.patient-timeline-status--cancelled {
+  background-color: #fee2e2;
+  color: var(--color-error);
+}
+
+.patient-timeline-status--no-show {
+  background-color: #fef3c7;
+  color: var(--color-warning);
+}
+
+.patient-more {
+  margin: var(--spacing-2) 0 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-500);
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-12);
+  color: var(--color-neutral-600);
+}
+
+@media (max-width: 768px) {
+  .patients-page {
+    padding: var(--spacing-6) var(--spacing-4);
+  }
+
+  .patient-timeline-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

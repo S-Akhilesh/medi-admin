@@ -66,29 +66,104 @@
   margin-top: var(--spacing-2);
 }
 
-.slot-select {
-  width: 100%;
-  padding: var(--spacing-3) var(--spacing-4);
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-normal);
-  color: var(--color-neutral-900);
-  background-color: white;
-  border: 1.5px solid var(--color-neutral-300);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
-  outline: none;
-  min-height: 44px;
-  cursor: pointer;
+.slot-selection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
 }
 
-.slot-select:hover {
+.slot-date-filter {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.slot-date-filter .input-wrapper {
+  flex: 1;
+  min-width: 160px;
+}
+
+.slot-date-filter-clear {
+  flex-shrink: 0;
+}
+
+.slot-selection .input-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-neutral-700);
+}
+
+.slot-selection-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-3);
+  max-height: 280px;
+  overflow-y: auto;
+  padding: var(--spacing-2);
+  background-color: var(--color-neutral-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-neutral-200);
+}
+
+.slot-selection-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: var(--spacing-4);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-neutral-600);
+}
+
+.slot-option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: white;
+  border: 2px solid var(--color-neutral-200);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.slot-option:hover {
   border-color: var(--color-neutral-400);
 }
 
-.slot-select:focus {
+.slot-option--selected {
   border-color: var(--color-primary-500);
   box-shadow: 0 0 0 3px var(--color-primary-100);
+  background-color: var(--color-primary-50);
+}
+
+.slot-option-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.slot-option-date {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-neutral-900);
+}
+
+.slot-option-time {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary-600);
+}
+
+.slot-option-duration {
+  font-size: var(--font-size-xs);
+  color: var(--color-neutral-600);
 }
 
 .appointments-card {
@@ -214,6 +289,10 @@
   }
 
   .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .slot-selection-list {
     grid-template-columns: 1fr;
   }
 

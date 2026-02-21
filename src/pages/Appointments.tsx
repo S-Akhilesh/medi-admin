@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -25,6 +25,18 @@ export const Appointments = () => {
     patientEmail: '',
     notes: '',
   });
+  const [slotDateFilter, setSlotDateFilter] = useState('');
+
+  const slotsForSelectedDate = useMemo(() => {
+    if (!slotDateFilter) return availableSlots;
+    return availableSlots.filter((slot) => slot.date === slotDateFilter);
+  }, [availableSlots, slotDateFilter]);
+
+  const handleSlotDateFilterChange = (date: string) => {
+    setSlotDateFilter(date);
+    const stillValid = !formData.slotId || availableSlots.some((s) => s.id === formData.slotId && s.date === date);
+    if (!stillValid) setFormData((prev) => ({ ...prev, slotId: '' }));
+  };
 
   useEffect(() => {
     loadAppointments();
@@ -103,6 +115,7 @@ export const Appointments = () => {
 
       setSuccess('Appointment created successfully!');
       setFormData({ slotId: '', patientName: '', patientPhone: '', patientEmail: '', notes: '' });
+      setSlotDateFilter('');
       setShowForm(false);
       await loadAppointments();
       await loadAvailableSlots();
@@ -168,6 +181,11 @@ export const Appointments = () => {
       default:
         return '';
     }
+  };
+
+  const formatSlotDate = (isoDate: string) => {
+    const d = new Date(`${isoDate}T00:00:00`);
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   };
 
   return (
@@ -236,21 +254,59 @@ export const Appointments = () => {
         <Card className="appointment-form-card">
           <h2 className="card-title">Create New Appointment</h2>
           <form onSubmit={handleSubmit} className="appointment-form">
-            <div className="input-wrapper">
+            <div className="slot-selection">
+              <div className="slot-date-filter">
+                <Input
+                  label="Filter by date"
+                  type="date"
+                  value={slotDateFilter}
+                  onChange={(e) => handleSlotDateFilterChange(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+                {slotDateFilter && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSlotDateFilterChange('')}
+                    className="slot-date-filter-clear"
+                  >
+                    Clear date
+                  </Button>
+                )}
+              </div>
               <label className="input-label">Select Time Slot *</label>
-              <select
-                value={formData.slotId}
-                onChange={(e) => setFormData({ ...formData, slotId: e.target.value })}
-                className="input slot-select"
-                required
-              >
-                <option value="">Select a time slot</option>
-                {availableSlots.map((slot) => (
-                  <option key={slot.id} value={slot.id}>
-                    {new Date(slot.date).toLocaleDateString()} - {slot.startTime} to {slot.endTime}
-                  </option>
-                ))}
-              </select>
+              <div className="slot-selection-list" role="radiogroup" aria-label="Choose an available time slot">
+                {slotsForSelectedDate.length === 0 ? (
+                  <p className="slot-selection-empty">
+                    {availableSlots.length === 0
+                      ? 'No available slots. Create slots in the Time Slots page.'
+                      : slotDateFilter
+                        ? `No available slots on this date. Try another date or clear the filter.`
+                        : 'No available slots.'}
+                  </p>
+                ) : (
+                  slotsForSelectedDate.map((slot) => (
+                    <label
+                      key={slot.id}
+                      className={`slot-option ${formData.slotId === slot.id ? 'slot-option--selected' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="slotId"
+                        value={slot.id}
+                        checked={formData.slotId === slot.id}
+                        onChange={(e) => setFormData({ ...formData, slotId: e.target.value })}
+                        className="slot-option-input"
+                        required
+                      />
+                      <span className="slot-option-date">{formatSlotDate(slot.date)}</span>
+                      <span className="slot-option-time">{slot.startTime} – {slot.endTime}</span>
+                      <span className="slot-option-duration">{slot.duration} min</span>
+                    </label>
+                  ))
+                )}
+              </div>
               <span className="input-helper">Choose an available time slot</span>
             </div>
 

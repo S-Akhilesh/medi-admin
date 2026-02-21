@@ -7,8 +7,8 @@ import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { Overview } from './pages/Overview';
 import { Appointments } from './pages/Appointments';
+import { Patients } from './pages/Patients';
 import { Slots } from './pages/Slots';
-import { Schedule } from './pages/Schedule';
 import { Settings } from './pages/Settings';
 import './App.css';
 
@@ -50,21 +50,21 @@ function App() {
             }
           />
           <Route
-            path="/dashboard/slots"
+            path="/dashboard/patients"
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <Slots />
+                  <Patients />
                 </DashboardLayout>
               </ProtectedRoute>
             }
           />
           <Route
-            path="/dashboard/schedule"
+            path="/dashboard/slots"
             element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <Schedule />
+                  <Slots />
                 </DashboardLayout>
               </ProtectedRoute>
             }

@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -15,11 +15,99 @@ type SlotFormData = {
   duration: number;
 };
 
+type CalculatedSlot = {
+  startTime: string;
+  endTime: string;
+};
+
 const DEFAULT_FORM_DATA: SlotFormData = {
   date: '',
   startTime: '',
   endTime: '',
   duration: 30,
+};
+
+type DateRangeFilter = 'all' | 'today' | 'this_week' | 'next_7' | 'past';
+type StatusFilter = 'all' | 'available' | 'unavailable';
+type SortOption = 'date-asc' | 'date-desc';
+
+const getDateRangeForFilter = (range: DateRangeFilter): { from: string; to: string } | null => {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${y}-${m}-${d}`;
+
+  if (range === 'all') return null;
+  if (range === 'today') return { from: todayStr, to: todayStr };
+
+  if (range === 'this_week') {
+    const dayOfWeek = today.getDay();
+    const start = new Date(today);
+    start.setDate(today.getDate() - dayOfWeek);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return {
+      from: start.toISOString().split('T')[0],
+      to: end.toISOString().split('T')[0],
+    };
+  }
+
+  if (range === 'next_7') {
+    const from = new Date(today);
+    from.setDate(today.getDate() + 1);
+    const to = new Date(from);
+    to.setDate(from.getDate() + 6);
+    return {
+      from: from.toISOString().split('T')[0],
+      to: to.toISOString().split('T')[0],
+    };
+  }
+
+  if (range === 'past') {
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    return { from: '1970-01-01', to: yesterday.toISOString().split('T')[0] };
+  }
+
+  return null;
+};
+
+// Helper function to convert HH:mm to minutes
+const timeToMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+// Helper function to convert minutes to HH:mm
+const minutesToTime = (minutes: number): string => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+};
+
+// Calculate slots from time range
+const calculateSlots = (startTime: string, endTime: string, duration: number): CalculatedSlot[] => {
+  if (!startTime || !endTime || duration <= 0) return [];
+  
+  const startMinutes = timeToMinutes(startTime);
+  const endMinutes = timeToMinutes(endTime);
+  
+  if (startMinutes >= endMinutes) return [];
+  
+  const slots: CalculatedSlot[] = [];
+  let currentStart = startMinutes;
+  
+  while (currentStart + duration <= endMinutes) {
+    const currentEnd = currentStart + duration;
+    slots.push({
+      startTime: minutesToTime(currentStart),
+      endTime: minutesToTime(currentEnd),
+    });
+    currentStart = currentEnd;
+  }
+  
+  return slots;
 };
 
 export const Slots = () => {
@@ -34,6 +122,56 @@ export const Slots = () => {
   const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
   const isEditing = editingSlotId !== null;
   const [formData, setFormData] = useState<SlotFormData>(DEFAULT_FORM_DATA);
+
+  // Filters
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [durationFilter, setDurationFilter] = useState<number | ''>('');
+  const [sortBy, setSortBy] = useState<SortOption>('date-asc');
+
+  // Filter and sort slots
+  const filteredSlots = useMemo(() => {
+    let result = [...slots];
+
+    const dateRange = getDateRangeForFilter(dateRangeFilter);
+    if (dateRange) {
+      result = result.filter((s) => s.date >= dateRange.from && s.date <= dateRange.to);
+    }
+
+    if (statusFilter === 'available') result = result.filter((s) => s.isAvailable);
+    if (statusFilter === 'unavailable') result = result.filter((s) => !s.isAvailable);
+
+    if (durationFilter !== '') {
+      result = result.filter((s) => s.duration === durationFilter);
+    }
+
+    result.sort((a, b) => {
+      const dateCompare = a.date.localeCompare(b.date);
+      if (dateCompare !== 0) return sortBy === 'date-asc' ? dateCompare : -dateCompare;
+      const timeCompare = a.startTime.localeCompare(b.startTime);
+      return sortBy === 'date-asc' ? timeCompare : -timeCompare;
+    });
+
+    return result;
+  }, [slots, dateRangeFilter, statusFilter, durationFilter, sortBy]);
+
+  const hasActiveFilters =
+    dateRangeFilter !== 'all' || statusFilter !== 'all' || durationFilter !== '' || sortBy !== 'date-asc';
+
+  const clearFilters = () => {
+    setDateRangeFilter('all');
+    setStatusFilter('all');
+    setDurationFilter('');
+    setSortBy('date-asc');
+  };
+
+  // Calculate preview slots based on form data
+  const previewSlots = useMemo(() => {
+    if (!formData.startTime || !formData.endTime || formData.duration <= 0) {
+      return [];
+    }
+    return calculateSlots(formData.startTime, formData.endTime, formData.duration);
+  }, [formData.startTime, formData.endTime, formData.duration]);
 
   useEffect(() => {
     if (currentUser) {
@@ -113,10 +251,17 @@ export const Slots = () => {
       return;
     }
 
+    // Validate that at least one slot can be created
+    if (previewSlots.length === 0) {
+      setError('The time range must be at least equal to the slot duration');
+      return;
+    }
+
     setSubmitLoading(true);
 
     try {
       if (isEditing && editingSlotId) {
+        // For editing, update the single slot (keeping backward compatibility)
         await slotsService.updateSlot(editingSlotId, {
           date: formData.date,
           startTime: formData.startTime,
@@ -125,24 +270,28 @@ export const Slots = () => {
         });
         setSuccess('Time slot updated successfully!');
       } else {
-        const slot: Omit<TimeSlot, 'id' | 'createdAt' | 'updatedAt'> = {
+        // Create multiple slots based on the time range
+        const slotsToCreate = previewSlots.map((slot) => ({
           doctorId: currentUser.uid,
           doctorName: currentUser.displayName || currentUser.email || 'Doctor',
           date: formData.date,
-          startTime: formData.startTime,
-          endTime: formData.endTime,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
           duration: formData.duration,
           isAvailable: true,
-        };
+        }));
 
-        await slotsService.createSlot(slot);
-        setSuccess('Time slot created successfully!');
+        // Create all slots
+        const createPromises = slotsToCreate.map((slot) => slotsService.createSlot(slot));
+        await Promise.all(createPromises);
+        
+        setSuccess(`Successfully created ${previewSlots.length} time slot${previewSlots.length > 1 ? 's' : ''}!`);
       }
 
       closeForm();
       await loadSlots();
     } catch (err: any) {
-      setError(`Failed to ${isEditing ? 'update' : 'create'} slot: ` + err.message);
+      setError(`Failed to ${isEditing ? 'update' : 'create'} slot${isEditing ? '' : 's'}: ` + err.message);
     } finally {
       setSubmitLoading(false);
     }
@@ -215,7 +364,14 @@ export const Slots = () => {
 
       {showForm && (
         <Card className="slot-form-card">
-          <h2 className="card-title">{isEditing ? 'Edit Time Slot' : 'Create New Time Slot'}</h2>
+          <div>
+            <h2 className="card-title">{isEditing ? 'Edit Time Slot' : 'Create Time Slots'}</h2>
+            {!isEditing && (
+              <p className="form-description">
+                Set a time range and duration to automatically create multiple slots. The system will divide your time range into slots based on the duration you specify.
+              </p>
+            )}
+          </div>
           <form onSubmit={handleSubmit} className="slot-form">
             <div className="form-row">
               <Input
@@ -238,6 +394,7 @@ export const Slots = () => {
                 min={15}
                 max={240}
                 step={15}
+                helperText={!isEditing ? "Each slot will be this long. The time range will be divided into slots of this duration." : undefined}
               />
             </div>
             <div className="form-row">
@@ -256,9 +413,39 @@ export const Slots = () => {
                 required
               />
             </div>
+            {!isEditing && formData.startTime && formData.endTime && formData.duration > 0 && (
+              <div className="slots-preview">
+                <div className="slots-preview-header">
+                  <h3 className="slots-preview-title">
+                    Preview: {previewSlots.length} slot{previewSlots.length !== 1 ? 's' : ''} will be created
+                  </h3>
+                  {previewSlots.length === 0 && (
+                    <p className="slots-preview-warning">
+                      The time range must be at least equal to the slot duration
+                    </p>
+                  )}
+                </div>
+                {previewSlots.length > 0 && (
+                  <div className="slots-preview-list">
+                    {previewSlots.map((slot, index) => (
+                      <div key={index} className="slots-preview-item">
+                        <span className="slots-preview-time">
+                          {slot.startTime} - {slot.endTime}
+                        </span>
+                        <span className="slots-preview-duration">{formData.duration} min</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="form-actions">
-              <Button type="submit" variant="primary" disabled={submitLoading} fullWidth>
-                {submitLoading ? (isEditing ? 'Saving...' : 'Creating...') : isEditing ? 'Save Changes' : 'Create Slot'}
+              <Button type="submit" variant="primary" disabled={submitLoading || (!isEditing && previewSlots.length === 0)} fullWidth>
+                {submitLoading 
+                  ? (isEditing ? 'Saving...' : `Creating ${previewSlots.length} slot${previewSlots.length !== 1 ? 's' : ''}...`) 
+                  : isEditing 
+                    ? 'Save Changes' 
+                    : `Create ${previewSlots.length} Slot${previewSlots.length !== 1 ? 's' : ''}`}
               </Button>
               {isEditing && (
                 <Button type="button" variant="secondary" disabled={submitLoading} fullWidth onClick={closeForm}>
@@ -271,16 +458,94 @@ export const Slots = () => {
       )}
 
       <Card className="slots-card">
-        <h2 className="card-title">Your Time Slots</h2>
+        <div className="slots-card-header">
+          <h2 className="card-title">Your Time Slots</h2>
+          {slots.length > 0 && (
+            <div className="slots-filters">
+              <div className="slots-filter-group">
+                <label htmlFor="filter-date" className="slots-filter-label">Date</label>
+                <select
+                  id="filter-date"
+                  className="slots-filter-select"
+                  value={dateRangeFilter}
+                  onChange={(e) => setDateRangeFilter(e.target.value as DateRangeFilter)}
+                >
+                  <option value="all">All dates</option>
+                  <option value="today">Today</option>
+                  <option value="this_week">This week</option>
+                  <option value="next_7">Next 7 days</option>
+                  <option value="past">Past</option>
+                </select>
+              </div>
+              <div className="slots-filter-group">
+                <label htmlFor="filter-status" className="slots-filter-label">Status</label>
+                <select
+                  id="filter-status"
+                  className="slots-filter-select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                >
+                  <option value="all">All</option>
+                  <option value="available">Available</option>
+                  <option value="unavailable">Unavailable</option>
+                </select>
+              </div>
+              <div className="slots-filter-group">
+                <label htmlFor="filter-duration" className="slots-filter-label">Duration</label>
+                <select
+                  id="filter-duration"
+                  className="slots-filter-select"
+                  value={durationFilter === '' ? 'all' : String(durationFilter)}
+                  onChange={(e) => setDurationFilter(e.target.value === 'all' ? '' : Number(e.target.value))}
+                >
+                  <option value="all">All</option>
+                  <option value="15">15 min</option>
+                  <option value="30">30 min</option>
+                  <option value="45">45 min</option>
+                  <option value="60">60 min</option>
+                  <option value="90">90 min</option>
+                  <option value="120">120 min</option>
+                </select>
+              </div>
+              <div className="slots-filter-group">
+                <label htmlFor="filter-sort" className="slots-filter-label">Sort</label>
+                <select
+                  id="filter-sort"
+                  className="slots-filter-select"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                >
+                  <option value="date-asc">Date (earliest first)</option>
+                  <option value="date-desc">Date (latest first)</option>
+                </select>
+              </div>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="slots-filter-clear">
+                  Clear filters
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+        {slots.length > 0 && (
+          <p className="slots-result-count">
+            Showing {filteredSlots.length} of {slots.length} slot{slots.length !== 1 ? 's' : ''}
+          </p>
+        )}
         {listLoading && !slots.length ? (
           <div className="loading-state">Loading slots...</div>
         ) : slots.length === 0 ? (
           <div className="empty-state">
             <p>No time slots created yet. Create your first slot to get started!</p>
           </div>
+        ) : filteredSlots.length === 0 ? (
+          <div className="empty-state empty-state--filtered">
+            <p>No slots match your filters.</p>
+            <Button variant="secondary" size="sm" onClick={clearFilters}>Clear filters</Button>
+          </div>
         ) : (
           <div className="slots-list">
-            {slots.map((slot) => (
+            {filteredSlots.map((slot) => (
               <div key={slot.id} className={`slot-item ${!slot.isAvailable ? 'slot-item--unavailable' : ''}`}>
                 <div className="slot-info">
                   <div className="slot-date">
