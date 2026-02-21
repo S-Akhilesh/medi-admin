@@ -17,7 +17,12 @@ const navItems: NavItem[] = [
   { path: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
 ];
 
-export const Sidebar = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -30,40 +35,65 @@ export const Sidebar = () => {
     }
   };
 
+  const handleNavClick = () => {
+    onClose?.();
+  };
+
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <h2 className="sidebar-logo">Admin Panel</h2>
-      </div>
-      <nav className="sidebar-nav">
-        <ul className="nav-list">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  `nav-item ${isActive ? 'nav-item--active' : ''}`
-                }
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="sidebar-footer">
-        <Button
-          variant="ghost"
-          fullWidth
-          onClick={handleSignOut}
-          className="sidebar-signout"
+    <>
+      {isOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={onClose}
+          onKeyDown={(e) => e.key === 'Escape' && onClose?.()}
+          role="button"
+          tabIndex={0}
+          aria-label="Close menu"
+        />
+      )}
+      <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
+        <button
+          type="button"
+          className="sidebar-close-btn"
+          onClick={onClose}
+          aria-label="Close menu"
         >
-          <span className="nav-icon">🚪</span>
-          <span>Sign Out</span>
-        </Button>
-      </div>
-    </aside>
+          ✕
+        </button>
+        <div className="sidebar-header">
+          <h2 className="sidebar-logo">Admin Panel</h2>
+        </div>
+        <nav className="sidebar-nav">
+          <ul className="nav-list">
+            {navItems.map((item) => (
+              <li key={item.path}>
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `nav-item ${isActive ? 'nav-item--active' : ''}`
+                  }
+                  onClick={handleNavClick}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-label">{item.label}</span>
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div className="sidebar-footer">
+          <Button
+            variant="ghost"
+            fullWidth
+            onClick={handleSignOut}
+            className="sidebar-signout"
+          >
+            <span className="nav-icon">🚪</span>
+            <span>Sign Out</span>
+          </Button>
+        </div>
+      </aside>
+    </>
   );
 };
 
