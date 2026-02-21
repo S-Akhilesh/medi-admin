@@ -15,16 +15,20 @@ export type UserDocument = {
   updatedAt?: Date;
 };
 
-const mapDocToUserDocument = (data: Record<string, unknown>) => ({
-  uid: data.uid as string,
-  email: (data.email as string | null) ?? null,
-  displayName: (data.displayName as string | null) ?? null,
-  photoURL: (data.photoURL as string | null) ?? null,
-  phoneNumber: (data.phoneNumber as string | null) ?? null,
-  emailVerified: (data.emailVerified as boolean) ?? false,
-  createdAt: data.createdAt?.toDate?.() as Date | undefined,
-  updatedAt: data.updatedAt?.toDate?.() as Date | undefined,
-});
+const mapDocToUserDocument = (data: Record<string, unknown>) => {
+  const createdAt = data.createdAt as Timestamp | undefined;
+  const updatedAt = data.updatedAt as Timestamp | undefined;
+  return {
+    uid: data.uid as string,
+    email: (data.email as string | null) ?? null,
+    displayName: (data.displayName as string | null) ?? null,
+    photoURL: (data.photoURL as string | null) ?? null,
+    phoneNumber: (data.phoneNumber as string | null) ?? null,
+    emailVerified: (data.emailVerified as boolean) ?? false,
+    createdAt: createdAt?.toDate?.() as Date | undefined,
+    updatedAt: updatedAt?.toDate?.() as Date | undefined,
+  };
+};
 
 export const usersService = {
   /**
