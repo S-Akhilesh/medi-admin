@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -117,7 +118,7 @@ export const Slots = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [rowBusyId, setRowBusyId] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
   const isEditing = editingSlotId !== null;
@@ -188,7 +189,9 @@ export const Slots = () => {
       const doctorSlots = await slotsService.getSlotsByDoctor(currentUser.uid);
       setSlots(doctorSlots);
     } catch (err: any) {
-      setError('Failed to load slots: ' + err.message);
+      const msg = 'Failed to load slots: ' + err.message;
+      setError(msg);
+      toast.error(msg);
     } finally {
       setListLoading(false);
     }
@@ -206,14 +209,12 @@ export const Slots = () => {
 
   const openCreateForm = () => {
     setError('');
-    setSuccess('');
     resetForm();
     setShowForm(true);
   };
 
   const openEditForm = (slot: TimeSlot) => {
     setError('');
-    setSuccess('');
     setEditingSlotId(slot.id ?? null);
     setFormData({
       date: slot.date,
@@ -233,27 +234,29 @@ export const Slots = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
 
     if (!currentUser) {
-      setError(`You must be logged in to ${isEditing ? 'update' : 'create'} slots`);
+      const msg = `You must be logged in to ${isEditing ? 'update' : 'create'} slots`;
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
     if (!formData.date) {
       setError('Please select a date');
+      toast.error('Please select a date');
       return;
     }
 
-    // Validate time (HH:mm string comparison works lexicographically)
     if (formData.startTime >= formData.endTime) {
       setError('End time must be after start time');
+      toast.error('End time must be after start time');
       return;
     }
 
-    // Validate that at least one slot can be created
     if (previewSlots.length === 0) {
       setError('The time range must be at least equal to the slot duration');
+      toast.error('The time range must be at least equal to the slot duration');
       return;
     }
 
@@ -268,7 +271,7 @@ export const Slots = () => {
           endTime: formData.endTime,
           duration: formData.duration,
         });
-        setSuccess('Time slot updated successfully!');
+        toast.success('Time slot updated successfully!');
       } else {
         // Create multiple slots based on the time range
         const slotsToCreate = previewSlots.map((slot) => ({
@@ -285,13 +288,15 @@ export const Slots = () => {
         const createPromises = slotsToCreate.map((slot) => slotsService.createSlot(slot));
         await Promise.all(createPromises);
         
-        setSuccess(`Successfully created ${previewSlots.length} time slot${previewSlots.length > 1 ? 's' : ''}!`);
+        toast.success(`Successfully created ${previewSlots.length} time slot${previewSlots.length > 1 ? 's' : ''}!`);
       }
 
       closeForm();
       await loadSlots();
     } catch (err: any) {
-      setError(`Failed to ${isEditing ? 'update' : 'create'} slot${isEditing ? '' : 's'}: ` + err.message);
+      const msg = `Failed to ${isEditing ? 'update' : 'create'} slot${isEditing ? '' : 's'}: ` + err.message;
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSubmitLoading(false);
     }
@@ -303,13 +308,13 @@ export const Slots = () => {
     try {
       setRowBusyId(slotId);
       await slotsService.deleteSlot(slotId);
-      setSuccess('Slot deleted successfully!');
+      toast.success('Slot deleted successfully!');
       if (editingSlotId === slotId) {
         closeForm();
       }
       await loadSlots();
     } catch (err: any) {
-      setError('Failed to delete slot: ' + err.message);
+      toast.error('Failed to delete slot: ' + err.message);
     } finally {
       setRowBusyId(null);
     }
@@ -321,10 +326,10 @@ export const Slots = () => {
       await slotsService.updateSlot(slot.id!, {
         isAvailable: !slot.isAvailable,
       });
-      setSuccess(`Slot marked ${slot.isAvailable ? 'unavailable' : 'available'} successfully!`);
+      toast.success(`Slot marked ${slot.isAvailable ? 'unavailable' : 'available'} successfully!`);
       await loadSlots();
     } catch (err: any) {
-      setError('Failed to update slot: ' + err.message);
+      toast.error('Failed to update slot: ' + err.message);
     } finally {
       setRowBusyId(null);
     }
@@ -353,12 +358,6 @@ export const Slots = () => {
       {error && (
         <Alert variant="error" className="slots-alert">
           {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert variant="success" className="slots-alert">
-          {success}
         </Alert>
       )}
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { appointmentsService } from '../services/appointmentsService';
@@ -22,6 +23,7 @@ export const Patients = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     if (currentUser) {
@@ -39,7 +41,9 @@ export const Patients = () => {
       const list = await appointmentsService.getAppointmentsByDoctor(currentUser.uid);
       setAppointments(list);
     } catch (err: unknown) {
-      setError('Failed to load patients: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      const msg = 'Failed to load patients: ' + (err instanceof Error ? err.message : 'Unknown error');
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

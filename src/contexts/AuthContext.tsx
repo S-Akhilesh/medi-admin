@@ -9,6 +9,7 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
+import { usersService } from '../services/usersService';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -56,9 +57,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       setLoading(false);
+      if (user) {
+        try {
+          await usersService.setUserDocument(user);
+        } catch (err) {
+          console.error('Failed to sync user document:', err);
+        }
+      }
     });
 
     return unsubscribe;

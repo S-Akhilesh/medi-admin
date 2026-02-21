@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -13,9 +14,9 @@ export const Appointments = () => {
   const { currentUser } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const { success: toastSuccess, error: toastError } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<Appointment['status'] | 'all'>('all');
   const [formData, setFormData] = useState({
@@ -59,7 +60,9 @@ export const Appointments = () => {
         setAppointments(allAppointments.filter((apt) => apt.status === filterStatus));
       }
     } catch (err: any) {
-      setError('Failed to load appointments: ' + err.message);
+      const msg = 'Failed to load appointments: ' + err.message;
+      setError(msg);
+      toastError(msg);
     } finally {
       setLoading(false);
     }
@@ -78,16 +81,17 @@ export const Appointments = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
 
     if (!currentUser) {
       setError('You must be logged in to create appointments');
+      toastError('You must be logged in to create appointments');
       return;
     }
 
     const selectedSlot = availableSlots.find((s) => s.id === formData.slotId);
     if (!selectedSlot) {
       setError('Please select a valid time slot');
+      toastError('Please select a valid time slot');
       return;
     }
 
@@ -113,14 +117,16 @@ export const Appointments = () => {
       // Mark slot as unavailable
       await slotsService.updateSlot(formData.slotId, { isAvailable: false });
 
-      setSuccess('Appointment created successfully!');
+      toastSuccess('Appointment created successfully!');
       setFormData({ slotId: '', patientName: '', patientPhone: '', patientEmail: '', notes: '' });
       setSlotDateFilter('');
       setShowForm(false);
       await loadAppointments();
       await loadAvailableSlots();
     } catch (err: any) {
-      setError('Failed to create appointment: ' + err.message);
+      const msg = 'Failed to create appointment: ' + err.message;
+      setError(msg);
+      toastError(msg);
     } finally {
       setLoading(false);
     }
@@ -138,11 +144,11 @@ export const Appointments = () => {
         }
       }
       
-      setSuccess('Appointment status updated!');
+      toastSuccess('Appointment status updated!');
       await loadAppointments();
       await loadAvailableSlots();
     } catch (err: any) {
-      setError('Failed to update appointment: ' + err.message);
+      toastError('Failed to update appointment: ' + err.message);
     }
   };
 
@@ -158,11 +164,11 @@ export const Appointments = () => {
         await slotsService.updateSlot(appointment.slotId, { isAvailable: true });
       }
       
-      setSuccess('Appointment deleted successfully!');
+      toastSuccess('Appointment deleted successfully!');
       await loadAppointments();
       await loadAvailableSlots();
     } catch (err: any) {
-      setError('Failed to delete appointment: ' + err.message);
+      toastError('Failed to delete appointment: ' + err.message);
     }
   };
 
@@ -203,12 +209,6 @@ export const Appointments = () => {
       {error && (
         <Alert variant="error" className="appointments-alert">
           {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert variant="success" className="appointments-alert">
-          {success}
         </Alert>
       )}
 

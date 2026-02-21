@@ -1,118 +1,176 @@
-import { useState } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
+import { updateProfile } from 'firebase/auth';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
+import { usersService } from '../services/usersService';
 import './Settings.css';
 
 export const Settings = () => {
-  const [settings, setSettings] = useState({
-    siteName: 'Admin Panel',
-    siteEmail: 'admin@example.com',
-    maintenanceMode: false,
-    notifications: true,
-    emailNotifications: true,
-  });
-  const [saved, setSaved] = useState(false);
+  const { currentUser } = useAuth();
+  const [displayName, setDisplayName] = useState('');
+  const [photoURL, setPhotoURL] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [avatarError, setAvatarError] = useState(false);
+  const toast = useToast();
 
-  const handleChange = (key: string, value: string | boolean) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-    setSaved(false);
+  useEffect(() => {
+    setAvatarError(false);
+  }, [photoURL]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        setDisplayName(currentUser.displayName ?? '');
+        setPhotoURL(currentUser.photoURL ?? '');
+        setAvatarError(false);
+        const doc = await usersService.getUserDocument(currentUser.uid);
+        if (!cancelled && doc?.phoneNumber) setPhoneNumber(doc.phoneNumber);
+      } catch (err) {
+        if (!cancelled) setError('Failed to load profile.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [currentUser]);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    setError('');
+    setSaving(true);
+    try {
+      await updateProfile(currentUser, {
+        displayName: displayName.trim() || null,
+        photoURL: photoURL.trim() || null,
+      });
+      await usersService.updateUserDocument(currentUser.uid, {
+        displayName: displayName.trim() || null,
+        photoURL: photoURL.trim() || null,
+        phoneNumber: phoneNumber.trim() || null,
+      });
+      toast.success('Profile updated successfully.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update profile.';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSave = () => {
-    // In a real app, this would save to an API
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-  };
+  if (!currentUser) {
+    return (
+      <div className="settings-page">
+        <div className="page-header">
+          <h1 className="page-title">Settings</h1>
+          <p className="page-subtitle">You must be signed in to view settings.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const email = currentUser.email ?? '';
+  const emailVerified = currentUser.emailVerified;
 
   return (
     <div className="settings-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Settings</h1>
-          <p className="page-subtitle">Manage your application settings</p>
+          <p className="page-subtitle">View and update your profile</p>
         </div>
       </div>
 
-      {saved && (
-        <Alert variant="success" className="settings-alert">
-          Settings saved successfully!
+      {error && (
+        <Alert variant="error" className="settings-alert">
+          {error}
         </Alert>
       )}
 
-      <div className="settings-grid">
-        <Card className="settings-card">
-          <h2 className="card-title">General Settings</h2>
-          <div className="settings-form">
+      <Card className="settings-card profile-card">
+        <h2 className="card-title">Profile</h2>
+        {loading ? (
+          <div className="settings-loading">Loading profile...</div>
+        ) : (
+          <form onSubmit={handleSubmit} className="settings-form">
+            <div className="profile-avatar-row">
+              <div className="profile-avatar">
+                {photoURL && !avatarError ? (
+                  <img
+                    src={photoURL}
+                    alt=""
+                    className="profile-avatar-img"
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarError(true)}
+                  />
+                ) : (
+                  <span className="profile-avatar-placeholder">
+                    {(displayName || email).charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="profile-avatar-hint">Photo updates when you save.</div>
+            </div>
             <Input
-              label="Site Name"
-              value={settings.siteName}
-              onChange={(e) => handleChange('siteName', e.target.value)}
-              placeholder="Enter site name"
+              label="Display name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Your name"
+              disabled={saving}
             />
             <Input
-              label="Site Email"
-              type="email"
-              value={settings.siteEmail}
-              onChange={(e) => handleChange('siteEmail', e.target.value)}
-              placeholder="admin@example.com"
+              label="Photo URL"
+              type="url"
+              value={photoURL}
+              onChange={(e) => setPhotoURL(e.target.value)}
+              placeholder="https://example.com/photo.jpg"
+              disabled={saving}
+              helperText="Optional. Link to a profile image."
             />
-            <Button variant="primary" onClick={handleSave} fullWidth>
-              Save Changes
+            <div className="input-wrapper">
+              <label className="input-label">Email</label>
+              <div className="profile-email-row">
+                <input
+                  type="email"
+                  value={email}
+                  readOnly
+                  className="input input--readonly"
+                  aria-label="Email (read-only)"
+                />
+                {emailVerified && (
+                  <span className="profile-verified" title="Verified">✓ Verified</span>
+                )}
+              </div>
+              <span className="input-helper">Email cannot be changed here. Use your account provider to change it.</span>
+            </div>
+            <Input
+              label="Phone (optional)"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+1 234 567 8900"
+              disabled={saving}
+              helperText="Stored in your profile only."
+            />
+            <Button type="submit" variant="primary" disabled={saving} fullWidth>
+              {saving ? 'Saving...' : 'Save changes'}
             </Button>
-          </div>
-        </Card>
-
-        <Card className="settings-card">
-          <h2 className="card-title">System Settings</h2>
-          <div className="settings-form">
-            <div className="setting-toggle">
-              <div className="toggle-content">
-                <label className="toggle-label">Maintenance Mode</label>
-                <p className="toggle-description">Enable to put the site in maintenance mode</p>
-              </div>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={settings.maintenanceMode}
-                  onChange={(e) => handleChange('maintenanceMode', e.target.checked)}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-toggle">
-              <div className="toggle-content">
-                <label className="toggle-label">Push Notifications</label>
-                <p className="toggle-description">Receive push notifications</p>
-              </div>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={settings.notifications}
-                  onChange={(e) => handleChange('notifications', e.target.checked)}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <div className="setting-toggle">
-              <div className="toggle-content">
-                <label className="toggle-label">Email Notifications</label>
-                <p className="toggle-description">Receive email notifications</p>
-              </div>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={settings.emailNotifications}
-                  onChange={(e) => handleChange('emailNotifications', e.target.checked)}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-          </div>
-        </Card>
-      </div>
+          </form>
+        )}
+      </Card>
     </div>
   );
 };
-
