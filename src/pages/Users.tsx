@@ -58,7 +58,6 @@ export const Users = () => {
                   <td>
                     <div className="table-actions">
                       <Button variant="ghost" size="sm">Edit</Button>
-                      <Button variant="ghost" size="sm">Delete</Button>
                     </div>
                   </td>
                 </tr>

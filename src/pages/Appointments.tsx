@@ -152,26 +152,6 @@ export const Appointments = () => {
     }
   };
 
-  const handleDelete = async (appointmentId: string) => {
-    if (!confirm('Are you sure you want to delete this appointment?')) return;
-
-    try {
-      const appointment = appointments.find((apt) => apt.id === appointmentId);
-      await appointmentsService.deleteAppointment(appointmentId);
-      
-      // Make the slot available again
-      if (appointment) {
-        await slotsService.updateSlot(appointment.slotId, { isAvailable: true });
-      }
-      
-      toastSuccess('Appointment deleted successfully!');
-      await loadAppointments();
-      await loadAvailableSlots();
-    } catch (err: any) {
-      toastError('Failed to delete appointment: ' + err.message);
-    }
-  };
-
   const getStatusColor = (status: Appointment['status']) => {
     switch (status) {
       case 'scheduled':
@@ -398,42 +378,37 @@ export const Appointments = () => {
                     )}
                   </div>
                 </div>
-                <div className="appointment-actions">
-                  {appointment.status === 'scheduled' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStatusUpdate(appointment.id!, 'confirmed')}
-                    >
-                      Confirm
-                    </Button>
-                  )}
-                  {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStatusUpdate(appointment.id!, 'completed')}
-                    >
-                      Complete
-                    </Button>
-                  )}
-                  {appointment.status !== 'cancelled' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStatusUpdate(appointment.id!, 'cancelled')}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(appointment.id!)}
-                  >
-                    Delete
-                  </Button>
-                </div>
+                {appointment.status !== 'completed' && (
+                  <div className="appointment-actions">
+                    {appointment.status === 'scheduled' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusUpdate(appointment.id!, 'confirmed')}
+                      >
+                        Confirm
+                      </Button>
+                    )}
+                    {appointment.status !== 'cancelled' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusUpdate(appointment.id!, 'completed')}
+                      >
+                        Complete
+                      </Button>
+                    )}
+                    {appointment.status !== 'cancelled' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusUpdate(appointment.id!, 'cancelled')}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

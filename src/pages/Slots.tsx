@@ -302,24 +302,6 @@ export const Slots = () => {
     }
   };
 
-  const handleDelete = async (slotId: string) => {
-    if (!window.confirm('Are you sure you want to delete this slot?')) return;
-
-    try {
-      setRowBusyId(slotId);
-      await slotsService.deleteSlot(slotId);
-      toast.success('Slot deleted successfully!');
-      if (editingSlotId === slotId) {
-        closeForm();
-      }
-      await loadSlots();
-    } catch (err: any) {
-      toast.error('Failed to delete slot: ' + err.message);
-    } finally {
-      setRowBusyId(null);
-    }
-  };
-
   const handleToggleAvailability = async (slot: TimeSlot) => {
     try {
       setRowBusyId(slot.id ?? null);
@@ -576,14 +558,6 @@ export const Slots = () => {
                     onClick={() => handleToggleAvailability(slot)}
                   >
                     {slot.isAvailable ? 'Mark Unavailable' : 'Mark Available'}
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    disabled={rowBusyId === slot.id || submitLoading}
-                    onClick={() => handleDelete(slot.id!)}
-                  >
-                    {rowBusyId === slot.id ? 'Deleting...' : 'Delete'}
                   </Button>
                 </div>
               </div>
